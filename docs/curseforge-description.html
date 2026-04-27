@@ -1,0 +1,106 @@
+<h1 style="color:#4CAF50;">EverHopper</h1>
+
+<p style="font-size:16px;"><strong>Hoppers keep transferring items while you're away.</strong></p>
+
+<p>Built a sorting system or item farm at a remote outpost? Vanilla hoppers freeze the moment their chunk unloads &mdash; meaning every item that should have flowed through them while you were gone simply didn't. EverHopper fixes that.</p>
+
+<hr/>
+
+<h2 style="color:#4CAF50;">How it works</h2>
+
+<p>EverHopper doesn't simulate hopper transfers on unloaded chunks (that would be expensive and laggy). Instead, every hopper records the game time on each tick. When the chunk reloads, EverHopper looks at how much in-game time elapsed while it was unloaded and <strong>catches the hopper up</strong> &mdash; pulling items from the container above and pushing items into the container below as if it had been ticking the whole time.</p>
+
+<p>Walk away for an hour, a day, a week &mdash; when you come back and the chunks reload, your sorting system, mob farm collectors, and storage chains advance to where they would have been under vanilla rules. Same end result, zero overhead while you were gone.</p>
+
+<blockquote style="border-left:4px solid #FFC107;padding-left:12px;color:#666;">
+<p><strong>Note:</strong> In singleplayer, the world only ticks while you're playing. EverHopper catches up based on <em>in-game time elapsed</em>, not real-world time, so closing the game and coming back tomorrow won't fast-forward your hoppers.</p>
+</blockquote>
+
+<blockquote style="border-left:4px solid #FFC107;padding-left:12px;color:#666;">
+<p><strong>Redstone-disabled hoppers</strong> don't accrue catch-up time. A hopper held off by a redstone signal stays paused, just like in vanilla.</p>
+</blockquote>
+
+<hr/>
+
+<h2 style="color:#4CAF50;">Features</h2>
+
+<ul>
+<li><span style="color:#4CAF50;"><strong>&#10004;</strong></span> Catches up both directions &mdash; pull from container above, push to container below</li>
+<li><span style="color:#4CAF50;"><strong>&#10004;</strong></span> Respects facing direction (down, north, south, east, west)</li>
+<li><span style="color:#4CAF50;"><strong>&#10004;</strong></span> Respects redstone disable &mdash; paused hoppers stay paused</li>
+<li><span style="color:#4CAF50;"><strong>&#10004;</strong></span> Visual cue when you walk back: a brief green sparkle and pickup ping at any hopper that transferred items while you were away</li>
+<li><span style="color:#4CAF50;"><strong>&#10004;</strong></span> Capped per-event simulation prevents lag spikes on chunk load (default cap: one in-game day, configurable)</li>
+<li><span style="color:#4CAF50;"><strong>&#10004;</strong></span> Fully configurable &mdash; catch-up cap, delta threshold, particles, and sound can all be tuned or disabled</li>
+<li><span style="color:#4CAF50;"><strong>&#10004;</strong></span> <strong>Server-side optional:</strong> vanilla clients can connect to EverHopper-equipped servers. The catch-up runs server-side; the visual cue is the only client-side concern, and it gracefully degrades for vanilla players.</li>
+</ul>
+
+<hr/>
+
+<h2 style="color:#4CAF50;">Compatibility</h2>
+
+<p>EverHopper uses <strong>only</strong> <code style="background:#eee;padding:2px 4px;">@Inject</code> mixins on <code style="background:#eee;padding:2px 4px;">HopperBlockEntity#pushItemsTick</code> &mdash; no overwrites, no replacements. It introduces <strong>no custom blocks, no block entities, and no items</strong>. This makes it broadly compatible with other mixin-based hopper mods and means uninstalling it is safe: your world keeps every existing hopper, they just go back to vanilla behavior.</p>
+
+<ul>
+<li><span style="color:#4CAF50;"><strong>&#10004;</strong></span> Server-side friendly &mdash; clients don't need to install it</li>
+<li><span style="color:#4CAF50;"><strong>&#10004;</strong></span> No worldgen changes</li>
+<li><span style="color:#4CAF50;"><strong>&#10004;</strong></span> No new items or blocks</li>
+<li><span style="color:#4CAF50;"><strong>&#10004;</strong></span> Works alongside other hopper mods that don't replace <code style="background:#eee;padding:2px 4px;">pushItemsTick</code> entirely</li>
+</ul>
+
+<hr/>
+
+<h2 style="color:#4CAF50;">Why use EverHopper?</h2>
+
+<ul>
+<li><strong>Remote item farms work.</strong> Auto-sorters and storage hoppers at distant bases actually move items.</li>
+<li><strong>Mob-farm collection chains stay full.</strong> Items dropped while you were away funnel down through your hopper line on chunk reload.</li>
+<li><strong>Multiplayer-friendly.</strong> Server admins can install EverHopper without forcing every player to install the client side.</li>
+<li><strong>Lightweight.</strong> No background ticking, no extra block entities, no chunk-loading.</li>
+<li><strong>Catch-up only.</strong> Hoppers never transfer faster than they would have under vanilla rules &mdash; just no slower.</li>
+</ul>
+
+<hr/>
+
+<h2 style="color:#4CAF50;">Commands</h2>
+
+<p>EverHopper ships with admin/debug commands under <code style="background:#eee;padding:2px 4px;">/everhopper</code> (requires op level 2).</p>
+
+<table style="border-collapse:collapse;width:100%;">
+<thead>
+<tr style="background:#eee;">
+<th style="border:1px solid #ccc;padding:6px;text-align:left;">Command</th>
+<th style="border:1px solid #ccc;padding:6px;text-align:left;">Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border:1px solid #ccc;padding:6px;"><code style="background:#eee;padding:2px 4px;">/everhopper inspect [x y z]</code></td>
+<td style="border:1px solid #ccc;padding:6px;">Show the hopper's tracked state: <code style="background:#eee;padding:2px 4px;">lastGameTime</code>, current game time, and computed delta. Defaults to the player's feet.</td>
+</tr>
+<tr>
+<td style="border:1px solid #ccc;padding:6px;"><code style="background:#eee;padding:2px 4px;">/everhopper tick &lt;radius&gt;</code></td>
+<td style="border:1px solid #ccc;padding:6px;">Force <code style="background:#eee;padding:2px 4px;">pushItemsTick</code> on every loaded hopper within the radius &mdash; useful for instant transfer without waiting.</td>
+</tr>
+<tr>
+<td style="border:1px solid #ccc;padding:6px;"><code style="background:#eee;padding:2px 4px;">/everhopper simulate &lt;ticks&gt; &lt;radius&gt;</code></td>
+<td style="border:1px solid #ccc;padding:6px;">Backdate the <code style="background:#eee;padding:2px 4px;">lastGameTime</code> of every loaded hopper in the radius by N ticks; the next natural tick will trigger catch-up.</td>
+</tr>
+</tbody>
+</table>
+
+<p>These are intended for server admins and modpack debugging. They have no effect on normal gameplay. Radius is capped at 64 blocks.</p>
+
+<hr/>
+
+<h2 style="color:#4CAF50;">Companion mods</h2>
+
+<ul>
+<li><a href="https://www.curseforge.com/minecraft/mc-mods/everfurnace"><strong>EverFurnace</strong></a> &mdash; same catch-up philosophy applied to furnaces, blast furnaces, and smokers.</li>
+<li><a href="https://www.curseforge.com/minecraft/mc-mods/evercrops"><strong>EverCrops</strong></a> &mdash; and to your wheat, carrots, melons, sweet berries, nether wart, and cocoa.</li>
+</ul>
+
+<hr/>
+
+<h2 style="color:#4CAF50;">License</h2>
+
+<p>Licensed under <strong>LGPL-3.0</strong>. Source available on <a href="https://github.com/gottsch/gottsch-minecraft-EverHopper">GitHub</a>.</p>
