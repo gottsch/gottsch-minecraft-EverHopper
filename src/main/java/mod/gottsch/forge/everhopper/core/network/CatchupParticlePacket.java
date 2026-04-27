@@ -1,12 +1,14 @@
 package mod.gottsch.forge.everhopper.core.network;
 
+import mod.gottsch.forge.everhopper.core.EverHopper;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
-
-import java.util.function.Supplier;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.ResourceLocation;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
  * Sent server → client when catch-up completes and at least one item was transferred.
@@ -14,7 +16,16 @@ import java.util.function.Supplier;
  *
  * @author Mark Gottschling on 4/26/2026
  */
-public class CatchupParticlePacket {
+public class CatchupParticlePacket implements CustomPacketPayload {
+
+    public static final Type<CatchupParticlePacket> TYPE =
+            new Type<>(ResourceLocation.fromNamespaceAndPath(EverHopper.MOD_ID, "catchup_particle"));
+
+    public static final StreamCodec<RegistryFriendlyByteBuf, CatchupParticlePacket> STREAM_CODEC =
+            StreamCodec.of(
+                    (buf, packet) -> buf.writeBlockPos(packet.pos),
+                    buf -> new CatchupParticlePacket(buf.readBlockPos())
+            );
 
     private final BlockPos pos;
 
@@ -22,20 +33,16 @@ public class CatchupParticlePacket {
         this.pos = pos;
     }
 
-    public static void encode(CatchupParticlePacket packet, FriendlyByteBuf buf) {
-        buf.writeBlockPos(packet.pos);
+    public static void handle(CatchupParticlePacket packet, IPayloadContext ctx) {
+        ctx.enqueueWork(() -> {
+            if (FMLEnvironment.dist == Dist.CLIENT) {
+                CatchupParticleHandler.handle(packet.pos);
+            }
+        });
     }
 
-    public static CatchupParticlePacket decode(FriendlyByteBuf buf) {
-        return new CatchupParticlePacket(buf.readBlockPos());
-    }
-
-    public static void handle(CatchupParticlePacket packet, Supplier<NetworkEvent.Context> ctxSupplier) {
-        NetworkEvent.Context ctx = ctxSupplier.get();
-        ctx.enqueueWork(() ->
-                DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
-                        () -> () -> CatchupParticleHandler.handle(packet.pos))
-        );
-        ctx.setPacketHandled(true);
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 }

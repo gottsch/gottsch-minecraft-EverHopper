@@ -13,9 +13,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.HopperBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 /**
  * Admin debug commands for EverHopper.
@@ -26,12 +26,8 @@ import net.minecraftforge.fml.common.Mod;
  *   <li>{@code /everhopper simulate <ticks> <radius>} — backdate every loaded hopper's
  *       {@code lastGameTime} by N ticks so the next tick triggers catch-up.</li>
  * </ul>
- *
- * <p>Unlike EverCrops there is no per-position registry — hopper state lives on the
- * block entity itself — so {@code tick} and {@code simulate} require a radius rather
- * than operating dimension-wide.
  */
-@Mod.EventBusSubscriber(modid = EverHopper.MOD_ID)
+@EventBusSubscriber(modid = EverHopper.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
 public final class EverHopperCommand {
 
     private static final int MAX_RADIUS = 64;

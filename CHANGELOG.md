@@ -1,4 +1,4 @@
-# Changelog for EverHopper 1.20.1
+# Changelog for Neoforge EverHopper 1.20.1
 
 All notable changes to this project will be documented in this file.
 

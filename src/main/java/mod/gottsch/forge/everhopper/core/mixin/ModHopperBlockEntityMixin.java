@@ -6,11 +6,12 @@ package mod.gottsch.forge.everhopper.core.mixin;
 import mod.gottsch.forge.everhopper.core.config.EverHopperConfig;
 import mod.gottsch.forge.everhopper.core.hopper.ModHopperBlockEntityInterface;
 import mod.gottsch.forge.everhopper.core.network.CatchupParticlePacket;
-import mod.gottsch.forge.everhopper.core.network.ModNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.HopperBlock;
@@ -19,7 +20,7 @@ import net.minecraft.world.level.block.entity.HopperBlockEntity;
 import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.Container;
-import net.minecraftforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -46,7 +47,7 @@ public abstract class ModHopperBlockEntityMixin extends RandomizableContainerBlo
     /** range at which a nearby player triggers the deferred cue. ~16 blocks keeps it close
      * enough that particles render at full detail and the pickup sound is audible. */
     @Unique private static final double CUE_TRIGGER_RANGE = 16.0;
-    /** range of the packet itself, in case other players within view want the cue too. */
+    /** range within which players receive the cue packet. */
     @Unique private static final double CUE_PACKET_RANGE  = 32.0;
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -69,14 +70,14 @@ public abstract class ModHopperBlockEntityMixin extends RandomizableContainerBlo
     // ----------------------------------------------------------------------------------------------------------------
 
     @Inject(method = "saveAdditional", at = @At("TAIL"))
-    private void onSave(CompoundTag tag, CallbackInfo ci) {
+    private void onSave(CompoundTag tag, HolderLookup.Provider registries, CallbackInfo ci) {
         tag.putInt    (NBT_VERSION_TAG,    CURRENT_NBT_VERSION);
         tag.putLong   (LAST_GAME_TIME_TAG, this.everHopper_1_20_1$lastGameTime);
         tag.putBoolean(PENDING_CUE_TAG,    this.everHopper_1_20_1$pendingCue);
     }
 
-    @Inject(method = "load", at = @At("TAIL"))
-    private void onLoad(CompoundTag tag, CallbackInfo ci) {
+    @Inject(method = "loadAdditional", at = @At("TAIL"))
+    private void onLoad(CompoundTag tag, HolderLookup.Provider registries, CallbackInfo ci) {
         this.everHopper_1_20_1$lastGameTime = tag.getLong   (LAST_GAME_TIME_TAG);
         // missing tag → returns false, which is the correct default for pre-existing hoppers
         this.everHopper_1_20_1$pendingCue   = tag.getBoolean(PENDING_CUE_TAG);
@@ -159,10 +160,13 @@ public abstract class ModHopperBlockEntityMixin extends RandomizableContainerBlo
 
         if (!sLevel.hasNearbyAlivePlayer(cx, cy, cz, CUE_TRIGGER_RANGE)) return;
 
-        ModNetwork.CHANNEL.send(
-                PacketDistributor.NEAR.with(() -> new PacketDistributor.TargetPoint(
-                        cx, cy, cz, CUE_PACKET_RANGE, sLevel.dimension())),
-                new CatchupParticlePacket(pos));
+        CatchupParticlePacket packet = new CatchupParticlePacket(pos);
+        double rangeSq = CUE_PACKET_RANGE * CUE_PACKET_RANGE;
+        for (ServerPlayer player : sLevel.players()) {
+            if (player.distanceToSqr(cx, cy, cz) <= rangeSq) {
+                PacketDistributor.sendToPlayer(player, packet);
+            }
+        }
 
         mixin.everHopper_1_20_1$setPendingCue(false);
         blockEntity.setChanged();
@@ -269,12 +273,12 @@ public abstract class ModHopperBlockEntityMixin extends RandomizableContainerBlo
     }
 
     /**
-     * Returns true if srcStack can merge into dstStack (same item, not at max count).
+     * Returns true if srcStack can merge into dstStack (same item+components, not at max count).
      */
     @Unique
     private static boolean canMerge(ItemStack dst, ItemStack src) {
         return !dst.isEmpty()
-                && ItemStack.isSameItemSameTags(dst, src)
+                && ItemStack.isSameItemSameComponents(dst, src)
                 && dst.getCount() < dst.getMaxStackSize();
     }
 

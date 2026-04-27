@@ -1,8 +1,8 @@
 package mod.gottsch.forge.everhopper.core.config;
 
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.config.ModConfig;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.neoforge.common.ModConfigSpec;
 import org.apache.commons.lang3.tuple.Pair;
 
 /**
@@ -11,39 +11,38 @@ import org.apache.commons.lang3.tuple.Pair;
 public final class EverHopperConfig {
 
     public static final Common COMMON;
-    public static final ForgeConfigSpec COMMON_SPEC;
+    public static final ModConfigSpec COMMON_SPEC;
 
     public static final Client CLIENT;
-    public static final ForgeConfigSpec CLIENT_SPEC;
+    public static final ModConfigSpec CLIENT_SPEC;
 
     static {
-        final Pair<Common, ForgeConfigSpec> commonPair =
-                new ForgeConfigSpec.Builder().configure(Common::new);
+        final Pair<Common, ModConfigSpec> commonPair =
+                new ModConfigSpec.Builder().configure(Common::new);
         COMMON      = commonPair.getLeft();
         COMMON_SPEC = commonPair.getRight();
 
-        final Pair<Client, ForgeConfigSpec> clientPair =
-                new ForgeConfigSpec.Builder().configure(Client::new);
+        final Pair<Client, ModConfigSpec> clientPair =
+                new ModConfigSpec.Builder().configure(Client::new);
         CLIENT      = clientPair.getLeft();
         CLIENT_SPEC = clientPair.getRight();
     }
 
     private EverHopperConfig() {}
 
-    public static void register() {
-        ModLoadingContext ctx = ModLoadingContext.get();
-        ctx.registerConfig(ModConfig.Type.COMMON, COMMON_SPEC);
-        ctx.registerConfig(ModConfig.Type.CLIENT, CLIENT_SPEC);
+    public static void register(ModContainer modContainer) {
+        modContainer.registerConfig(ModConfig.Type.COMMON, COMMON_SPEC);
+        modContainer.registerConfig(ModConfig.Type.CLIENT, CLIENT_SPEC);
     }
 
 
     public static final class Common {
 
-        public final ForgeConfigSpec.BooleanValue catchupEnabled;
-        public final ForgeConfigSpec.LongValue    maxCatchupTicks;
-        public final ForgeConfigSpec.IntValue     minDeltaThreshold;
+        public final ModConfigSpec.BooleanValue catchupEnabled;
+        public final ModConfigSpec.LongValue    maxCatchupTicks;
+        public final ModConfigSpec.IntValue     minDeltaThreshold;
 
-        Common(ForgeConfigSpec.Builder builder) {
+        Common(ModConfigSpec.Builder builder) {
             builder.comment("EverHopper — Common (server-side) configuration")
                     .push("catchup");
 
@@ -69,10 +68,10 @@ public final class EverHopperConfig {
 
     public static final class Client {
 
-        public final ForgeConfigSpec.BooleanValue particleBurstEnabled;
-        public final ForgeConfigSpec.BooleanValue soundCueEnabled;
+        public final ModConfigSpec.BooleanValue particleBurstEnabled;
+        public final ModConfigSpec.BooleanValue soundCueEnabled;
 
-        Client(ForgeConfigSpec.Builder builder) {
+        Client(ModConfigSpec.Builder builder) {
             builder.comment("EverHopper — Client-side configuration")
                     .push("visuals");
 

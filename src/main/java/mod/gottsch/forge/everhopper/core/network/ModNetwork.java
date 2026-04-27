@@ -1,37 +1,30 @@
 package mod.gottsch.forge.everhopper.core.network;
 
 import mod.gottsch.forge.everhopper.core.EverHopper;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.network.NetworkDirection;
-import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.simple.SimpleChannel;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 /**
  * @author Mark Gottschling on 4/14/2026
  */
 public class ModNetwork {
-    private static final String PROTOCOL_VERSION = "1";
+
+    public static void register(IEventBus modEventBus) {
+        modEventBus.addListener(ModNetwork::onRegisterPayloads);
+    }
 
     /**
-     * Channel accepts ABSENT on either side so vanilla clients can connect to
-     * EverHopper-equipped servers (and vice versa). The catch-up logic itself
-     * is server-only — the packet only carries the optional particle/sound cue.
+     * Server-side optional: vanilla clients can connect to EverHopper-equipped servers.
+     * The catch-up runs entirely server-side; the packet only delivers the optional
+     * particle/sound cue, which gracefully degrades for vanilla players.
      */
-    public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
-            new ResourceLocation(EverHopper.MOD_ID, "main"),
-            () -> PROTOCOL_VERSION,
-            NetworkRegistry.acceptMissingOr(PROTOCOL_VERSION::equals),
-            NetworkRegistry.acceptMissingOr(PROTOCOL_VERSION::equals)
-    );
-
-    public static void register() {
-        CHANNEL.registerMessage(
-                0,
-                CatchupParticlePacket.class,
-                CatchupParticlePacket::encode,
-                CatchupParticlePacket::decode,
-                CatchupParticlePacket::handle,
-                java.util.Optional.of(NetworkDirection.PLAY_TO_CLIENT)
+    private static void onRegisterPayloads(RegisterPayloadHandlersEvent event) {
+        PayloadRegistrar registrar = event.registrar(EverHopper.MOD_ID).optional();
+        registrar.playToClient(
+                CatchupParticlePacket.TYPE,
+                CatchupParticlePacket.STREAM_CODEC,
+                CatchupParticlePacket::handle
         );
     }
 }
